@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- MediaPipe Hands Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <?!= include('CSS'); ?>
+</head>
+<body>
+
+  <!-- Penunjuk Kursor Jari Webcam -->
+  <div id="hand-cursor"></div>
+
+  <!-- HALAMAN UTAMA PERMAINAN -->
+  <div id="main-menu" class="screen active">
+    <div class="title-container">
+      <h1>MISI PUZZLE PETA MALAYSIA 🇲🇾</h1>
+      <p>Terokai 13 Negeri & 3 Wilayah Persekutuan menggunakan Webcam Jari Anda!</p>
+    </div>
+
+    <div class="card-box">
+      <form id="player-form" onsubmit="event.preventDefault(); mulaPermainan();">
+        <div class="form-group">
+          <label for="player-name">Nama Pemain *</label>
+          <input type="text" id="player-name" required placeholder="Contoh: Ahmad Albab">
+        </div>
+        <div class="form-group">
+          <label for="player-class">Kelas *</label>
+          <input type="text" id="player-class" required placeholder="Contoh: 4 Cemerlang">
+        </div>
+        <button type="submit" class="btn btn-primary">MULA PERMAINAN</button>
+        <button type="button" class="btn btn-secondary" onclick="bukaModalPanduan()">PANDUAN PERMAINAN</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- HALAMAN PERMAINAN -->
+  <div id="game-screen" class="screen">
+    <div class="game-header">
+      <div class="stat-box">👤 <span id="disp-name">-</span> (<span id="disp-class">-</span>)</div>
+      <div class="stat-box">❤️ Nyawa: <div class="lives-container" id="disp-lives">❤️❤️❤️</div></div>
+      <div class="stat-box">⭐ Skor: <span id="disp-score">0</span></div>
+      <div class="stat-box">🧩 Puzzle: <span id="disp-progress">0/16</span></div>
+      <div class="stat-box">⏱️ Masa: <span id="disp-timer">00:00</span></div>
+    </div>
+
+    <div class="game-container">
+      <!-- Sidebar Item Negeri -->
+      <div class="puzzle-sidebar" id="puzzle-list">
+        <!-- Item puzzle dipaparkan secara dinamik melalui JS -->
+      </div>
+
+      <!-- Kawasan Peta SVG -->
+      <div class="map-wrapper">
+        <div id="feedback-toast"></div>
+        
+        <svg idmalaysia-map id="malaysia-map" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
+          <!-- Semenanjung & Borneo Malaysia SVG Paths -->
+          <g id="regions-group">
+            <!-- 1. Perlis -->
+            <path id="S01" data-name="Perlis" class="state-region" d="M 175,105 L 185,100 L 190,110 L 180,118 Z" />
+            <!-- 2. Kedah -->
+            <path id="S02" data-name="Kedah" class="state-region" d="M 175,118 L 190,110 L 205,120 L 210,145 L 185,155 L 175,130 Z" />
+            <!-- 3. Pulau Pinang -->
+            <path id="S03" data-name="Pulau Pinang" class="state-region" d="M 165,145 L 178,145 L 178,158 L 165,158 Z" />
+            <!-- 4. Perak -->
+            <path id="S04" data-name="Perak" class="state-region" d="M 185,155 L 210,145 L 230,165 L 225,210 L 195,205 L 185,180 Z" />
+            <!-- 5. Kelantan -->
+            <path id="S05" data-name="Kelantan" class="state-region" d="M 210,145 L 250,150 L 260,195 L 230,190 L 230,165 Z" />
+            <!-- 6. Terengganu -->
+            <path id="S06" data-name="Terengganu" class="state-region" d="M 250,150 L 280,175 L 275,220 L 260,195 Z" />
+            <!-- 7. Pahang -->
+            <path id="S07" data-name="Pahang" class="state-region" d="M 230,190 L 260,195 L 275,220 L 270,265 L 220,250 L 225,210 Z" />
+            <!-- 8. Selangor -->
+            <path id="S08" data-name="Selangor" class="state-region" d="M 195,205 L 225,210 L 220,245 L 200,240 Z" />
+            <!-- 9. Negeri Sembilan -->
+            <path id="S09" data-name="Negeri Sembilan" class="state-region" d="M 220,245 L 240,245 L 235,265 L 215,260 Z" />
+            <!-- 10. Melaka -->
+            <path id="S10" data-name="Melaka" class="state-region" d="M 225,263 L 240,265 L 235,278 L 222,275 Z" />
+            <!-- 11. Johor -->
+            <path id="S11" data-name="Johor" class="state-region" d="M 235,265 L 270,265 L 285,305 L 255,315 L 235,278 Z" />
+            
+            <!-- Sabah & Sarawak -->
+            <!-- 12. Sarawak -->
+            <path id="S12" data-name="Sarawak" class="state-region" d="M 520,260 L 610,230 L 680,180 L 730,220 L 660,290 L 560,310 Z" />
+            <!-- 13. Sabah -->
+            <path id="S13" data-name="Sabah" class="state-region" d="M 680,180 L 750,110 L 820,140 L 790,210 L 730,220 Z" />
+
+            <!-- Wilayah Persekutuan (Penanda Titik) -->
+            <!-- 14. WP Kuala Lumpur -->
+            <circle id="W01" data-name="Wilayah Persekutuan Kuala Lumpur" class="wp-marker" cx="212" cy="228" r="7" />
+            <!-- 15. WP Putrajaya -->
+            <circle id="W02" data-name="Wilayah Persekutuan Putrajaya" class="wp-marker" cx="214" cy="238" r="6" />
+            <!-- 16. WP Labuan -->
+            <circle id="W03" data-name="Wilayah Persekutuan Labuan" class="wp-marker" cx="690" cy="165" r="7" />
+          </g>
+        </svg>
+
+        <!-- Paparan Kamera Kecil -->
+        <div class="webcam-container">
+          <video id="webcam-video" autoplay playsinline muted></video>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAPARAN TAMAT PERMAINAN -->
+  <div id="result-screen" class="screen">
+    <div class="card-box" style="max-width:550px;">
+      <h1 id="result-title" style="color:var(--primary-blue); margin-bottom:15px;">PERMAINAN TAMAT</h1>
+      <div id="result-status-badge" style="font-size:1.5rem; font-weight:bold; margin-bottom:20px;"></div>
+
+      <div style="text-align:left; background:#F8FAFC; padding:20px; border-radius:12px; margin-bottom:20px;">
+        <p><strong>Nama:</strong> <span id="res-name"></span></p>
+        <p><strong>Kelas:</strong> <span id="res-class"></span></p>
+        <p><strong>Jumlah Skor:</strong> <span id="res-score"></span> / 180</p>
+        <p><strong>Masa Diambil:</strong> <span id="res-time"></span></p>
+        <p><strong>Baki Nyawa:</strong> <span id="res-lives"></span></p>
+        <p><strong>Jawapan Betul:</strong> <span id="res-correct"></span></p>
+        <p><strong>Jawapan Salah:</strong> <span id="res-wrong"></span></p>
+      </div>
+
+      <p id="save-status" style="font-weight:bold; color:var(--primary-blue); margin-bottom:15px;">Menyimpan rekod ke Google Sheets...</p>
+
+      <button class="btn btn-primary" onclick="mainSemula()">MAIN SEMULA 🔄</button>
+    </div>
+  </div>
+
+  <!-- MODAL PANDUAN -->
+  <div id="modal-panduan" class="modal">
+    <div class="modal-content">
+      <h2>PANDUAN PERMAINAN 🎯</h2>
+      <ul>
+        <li><strong>Guna Kamera:</strong> Benarkan akses webcam. Gerakkan <u>jari telunjuk</u> untuk mengawal kursor.</li>
+        <li><strong>Gaya Pinch (Pegang):</strong> Temukan <u>ibu jari & jari telunjuk</u> untuk memilih & menarik nama negeri.</li>
+        <li><strong>Lepaskan Pinch:</strong> Buka jari di atas lokasi peta yang betul untuk meletakkan puzzle.</li>
+        <li><strong>Tetikus/Skrin Sentuh:</strong> Anda juga boleh menggunakan tetikus untuk klik & drag jika webcam tidak ditemui.</li>
+        <li><strong>Sistem Nyawa:</strong> Permainan bermula dengan 3 ❤️. Jawapan salah akan mengurangkan 1 nyawa!</li>
+      </ul>
+      <button class="btn btn-secondary" onclick="tutupModalPanduan()">FAHAM & TUTUP</button>
+    </div>
+  </div>
+
+  <?!= include('JavaScript'); ?>
+</body>
+</html>
